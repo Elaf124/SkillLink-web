@@ -9,7 +9,7 @@ export default defineNuxtConfig({
 runtimeConfig: {
     geminiApiKey: process.env.GEMINI_API_KEY ?? '',
     public: {
-      apiBase: 'http://127.0.0.1:8000/api',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000/api',
     },
   },
 })
