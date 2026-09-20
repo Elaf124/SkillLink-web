@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* A calm, service-first palette: navy establishes trust and teal signals action. */
+  --color-clay: #0F766E;
+  --color-clay-dark: #115E59;
+  --color-clay-deep: #134E4A;
+  --color-clay-light: #5EEAD4;
+  --color-clay-subtle: #F0FDFA;
+
+  /* Modern Brand Tokens (mirrors clay for convenience) */
+  --color-brand: #0F766E;
+  --color-brand-hover: #115E59;
+  --color-brand-dark: #134E4A;
+  --color-brand-light: #5EEAD4;
+  --color-brand-subtle: #F0FDFA;
+
+  --color-emerald-primary: #0F766E;
+  --color-emerald-dark: #115E59;
+  --color-emerald-deep: #134E4A;
+  --color-emerald-light: #5EEAD4;
+  --color-emerald-subtle: #F0FDFA;
+
+  --color-emerald-50:  #F0FDFA;
+  --color-emerald-100: #CCFBF1;
+  --color-emerald-200: #99F6E4;
+  --color-emerald-300: #5EEAD4;
+  --color-emerald-400: #2DD4BF;
+  --color-emerald-500: #14B8A6;
+  --color-emerald-600: #0F766E;
+  --color-emerald-700: #115E59;
+  --color-emerald-800: #134E4A;
+  --color-emerald-900: #0F3D3B;
+  --color-emerald-950: #042F2E;
+
+  /* Neutral Ink & Canvas */
+  --color-ink: #172033;
+  --color-ink-muted: #64748B;
+  --color-canvas: #F7F9FC;
+  --color-canvas-dark: #0F172A;
+  --color-surface-dark: #172033;
+  --color-surface-dark-hover: #243049;
+  --color-mist: #E2E8F0;
+  --color-mist-dark: #28364D;
+
+  /* Accent & Badges */
+  --color-gold: #F59E0B;
+  --color-gold-light: #FDE68A;
+  --color-deep-teal: #134E4A;
+  --color-deep-teal-light: #5EEAD4;
+
+  /* Dusty rose for subtle highlights */
+  --color-rose-dust: #64748B;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+html.navigation-open,
+html.navigation-open body {
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection { background: #99F6E4; color: #134E4A; }
+
+.dark body {
+  background-color: var(--color-canvas-dark);
+  color: #F1F5F9;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Glassmorphic & Modern UI Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass-panel {
+  background: rgba(28, 51, 64, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Card Hover Lift & Glow */
+.card-hover-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .card-hover-lift:hover {
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Badges */
+.badge-pro {
+  background: linear-gradient(135deg, #0F766E 0%, #134E4A 100%);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+.badge-top-rated {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+  font-weight: 700;
+}
+
+/* Admin portal palette: shared navy, teal, and slate tokens instead of the legacy brown theme. */
+.admin-shell [class~="bg-[#8A5B43]"] { background-color: #0F766E !important; }
+.admin-shell [class*="bg-[#8A5B43]/"] { background-color: rgb(15 118 110 / .12) !important; }
+.admin-shell [class~="hover:bg-[#784E29]"]:hover { background-color: #115E59 !important; }
+.admin-shell [class~="text-[#8A5B43]"] { color: #0F766E !important; }
+.admin-shell [class*="text-[#8A5B43]/"] { color: rgb(15 118 110 / .45) !important; }
+.admin-shell [class~="text-[#784E29]"] { color: #115E59 !important; }
+.admin-shell [class~="border-[#8A5B43]"] { border-color: #0F766E !important; }
+.admin-shell [class~="ring-[#8A5B43]/40"] { --tw-ring-color: rgb(15 118 110 / .4) !important; }
+.admin-shell [class~="bg-[#FBF8F5]"] { background-color: #F8FAFC !important; }
+.admin-shell [class*="bg-[#FBF8F5]/"] { background-color: rgb(248 250 252 / .95) !important; }
+.admin-shell [class~="bg-[#FAF0E6]"],
+.admin-shell [class~="bg-[#F5EDE6]"],
+.admin-shell [class~="bg-[#F3EBE4]"],
+.admin-shell [class~="bg-[#FAF6F2]"],
+.admin-shell [class~="bg-[#FAF7F4]"] { background-color: #F0FDFA !important; }
+.admin-shell [class~="border-[#EADFD7]"],
+.admin-shell [class~="border-[#EBE0D7]"],
+.admin-shell [class~="border-[#F0E6DE]"],
+.admin-shell [class~="border-[#D9CBC1]"] { border-color: #CCFBF1 !important; }
+.admin-shell [class~="text-[#1A1210]"],
+.admin-shell [class~="text-[#5A3E26]"],
+.admin-shell [class~="text-[#5A483E]"],
+.admin-shell [class~="text-[#4A3C38]"] { color: #0F172A !important; }
+.admin-shell [class~="text-[#7D6E66]"],
+.admin-shell [class~="text-[#8A7A71]"],
+.admin-shell [class~="text-[#6E5D53]"],
+.admin-shell [class~="text-[#A6948B]"] { color: #64748B !important; }
+.dark .admin-shell [class~="dark:bg-[#15232D]"],
+.dark .admin-shell [class~="dark:bg-[#1E2D37]"],
+.dark .admin-shell [class~="dark:bg-[#253742]"] { background-color: #0F2431 !important; }
+.dark .admin-shell [class~="dark:text-[#F0EDE6]"],
+.dark .admin-shell [class~="dark:text-[#E0D3C7]"] { color: #E2E8F0 !important; }
+.dark .admin-shell [class~="dark:text-[#D4A98A]"] { color: #5EEAD4 !important; }
+
+
+/* Dark mode brand logo visibility */
+.dark .brand-logo {
+  color: #F8FAFC !important;
+}
+.dark .brand-logo .brand-logo__wordmark {
+  color: #F8FAFC !important;
+}
+.dark .brand-logo .brand-logo__wordmark span {
+  color: #2DD4BF !important;
+}
+.dark .brand-logo .brand-logo__mark {
+  background: linear-gradient(135deg, #0D9488, #115E59) !important;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
