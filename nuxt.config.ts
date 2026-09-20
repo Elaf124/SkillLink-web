@@ -6,10 +6,10 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-runtimeConfig: {
+  runtimeConfig: {
     geminiApiKey: process.env.GEMINI_API_KEY ?? '',
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000/api',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || process.env.API_BASE_URL || 'https://skilllink-8wzw.onrender.com/api',
     },
   },
 })
