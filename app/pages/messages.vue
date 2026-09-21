@@ -191,6 +191,8 @@ function formatThreadDate(iso: string) {
 }
 
 // ── Provider Search for Discovery ──
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
 async function openFindProviderModal() {
   showFindProviderModal.value = true
   if (!availableProviders.value.length) {
@@ -198,27 +200,30 @@ async function openFindProviderModal() {
   }
 }
 
-async function searchProviders() {
+async function searchProviders(query?: string) {
   loadingProviders.value = true
   try {
-    const res = await apiFetch<any>('/services?page=1')
-    const svcs = res.data ?? []
-    const byProvider = new Map()
-    for (const s of svcs) {
-      const pid = s.provider?.id
-      if (!pid || byProvider.has(pid)) continue
-      byProvider.set(pid, {
-        id: pid,
-        name: `${s.provider?.user?.first_name || ''} ${s.provider?.user?.last_name || ''}`.trim(),
-        title: s.provider?.professional_title || s.title,
-        rating: s.provider?.average_rating || 5.0,
-        jobs: s.provider?.completed_jobs || 0,
-        city: s.provider?.user?.city || 'Addis Ababa',
-        serviceTitle: s.title,
-        price: s.price,
-      })
-    }
-    availableProviders.value = Array.from(byProvider.values())
+    const q = (query !== undefined ? query : providerSearchQuery.value).trim()
+    const endpoint = q ? `/providers?q=${encodeURIComponent(q)}` : '/providers'
+    const res = await apiFetch<any>(endpoint)
+    const list = res.data ?? res ?? []
+    availableProviders.value = (Array.isArray(list) ? list : []).map((p: any) => {
+      const firstSvc = p.services?.[0]
+      return {
+        id: p.id,
+        name: `${p.user?.first_name || ''} ${p.user?.last_name || ''}`.trim() || p.business_name || 'Verified Provider',
+        title: p.professional_title || firstSvc?.title || 'Verified Specialist',
+        rating: Number(p.average_rating || 5.0),
+        jobs: p.completed_jobs || 0,
+        city: p.user?.city || p.user?.area || 'Addis Ababa',
+        price: firstSvc?.price,
+        serviceTitle: firstSvc?.title,
+        photo: p.user?.profile_photo || null,
+        services: p.services || [],
+        skills: p.skills || [],
+        bio: p.bio || '',
+      }
+    })
   } catch {
     availableProviders.value = []
   } finally {
@@ -226,14 +231,15 @@ async function searchProviders() {
   }
 }
 
+watch(providerSearchQuery, (newVal) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    searchProviders(newVal)
+  }, 250)
+})
+
 const filteredAvailableProviders = computed(() => {
-  if (!providerSearchQuery.value.trim()) return availableProviders.value
-  const q = providerSearchQuery.value.toLowerCase()
-  return availableProviders.value.filter(p =>
-    p.name.toLowerCase().includes(q) ||
-    p.title.toLowerCase().includes(q) ||
-    p.city.toLowerCase().includes(q)
-  )
+  return availableProviders.value
 })
 
 async function startChatWithProvider(p: any) {
@@ -735,18 +741,28 @@ async function startChatWithProvider(p: any) {
           <input
             v-model="providerSearchQuery"
             type="text"
-            placeholder="Search provider name, skill, or location..."
-            class="w-full rounded-xl bg-mist/20 dark:bg-canvas-dark border border-mist dark:border-white/15 pl-10 pr-4 py-2.5 text-sm text-ink dark:text-[#F0EDE6] placeholder:text-ink/35 dark:placeholder:text-white/35 outline-none focus:ring-2 focus:ring-clay/40 transition"
+            placeholder="Search by name, skill, trade (e.g. plumber, electrician), or city..."
+            class="w-full rounded-xl bg-mist/20 dark:bg-canvas-dark border border-mist dark:border-white/15 pl-10 pr-10 py-2.5 text-sm text-ink dark:text-[#F0EDE6] placeholder:text-ink/35 dark:placeholder:text-white/35 outline-none focus:ring-2 focus:ring-clay/40 transition"
           />
+          <button
+            v-if="providerSearchQuery"
+            @click="providerSearchQuery = ''; searchProviders('')"
+            class="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink/40 dark:text-white/40 hover:text-clay text-xs p-1"
+            title="Clear search"
+          >
+            ✕
+          </button>
         </div>
 
         <!-- Providers list -->
-        <div class="flex-1 overflow-y-auto divide-y divide-mist dark:divide-white/10 space-y-1">
-          <div v-if="loadingProviders" class="text-center py-8 text-xs text-ink/50 dark:text-white/50">
-            Loading available talent…
+        <div class="flex-1 overflow-y-auto divide-y divide-mist dark:divide-white/10 space-y-1 pr-1">
+          <div v-if="loadingProviders" class="text-center py-8 text-xs text-ink/50 dark:text-white/50 flex items-center justify-center gap-2">
+            <span class="inline-block w-4 h-4 border-2 border-clay border-t-transparent rounded-full animate-spin"></span>
+            Searching verified providers…
           </div>
-          <div v-else-if="!filteredAvailableProviders.length" class="text-center py-8 text-xs text-ink/50 dark:text-white/50">
-            No providers found matching your query.
+          <div v-else-if="!filteredAvailableProviders.length" class="text-center py-8 text-xs text-ink/50 dark:text-white/50 space-y-1">
+            <p class="font-medium text-sm text-ink/70 dark:text-white/70">No providers found matching "{{ providerSearchQuery }}"</p>
+            <p>Try searching by trade like "plumber", "electrician", "developer", "cleaner", or location.</p>
           </div>
           <div
             v-for="p in filteredAvailableProviders"
@@ -754,18 +770,27 @@ async function startChatWithProvider(p: any) {
             class="p-3 flex items-center justify-between gap-3 hover:bg-mist/30 dark:hover:bg-white/5 rounded-xl transition"
           >
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-full bg-clay/15 text-clay font-bold flex items-center justify-center text-sm shrink-0">
+              <div v-if="p.photo" class="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-clay/20">
+                <img :src="p.photo" :alt="p.name" class="w-full h-full object-cover" />
+              </div>
+              <div v-else class="w-10 h-10 rounded-full bg-clay/15 text-clay font-bold flex items-center justify-center text-sm shrink-0">
                 {{ p.name[0] }}
               </div>
               <div class="min-w-0">
-                <p class="font-bold text-sm text-ink dark:text-[#F0EDE6] truncate">{{ p.name }}</p>
-                <p class="text-xs text-ink/50 dark:text-white/50 truncate">{{ p.title }} · 📍 {{ p.city }}</p>
-                <p class="text-[11px] text-amber-600 font-semibold">★ {{ Number(p.rating).toFixed(1) }} ({{ p.jobs }} jobs)</p>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <p class="font-bold text-sm text-ink dark:text-[#F0EDE6] truncate">{{ p.name }}</p>
+                  <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">✓ Verified</span>
+                </div>
+                <p class="text-xs text-ink/60 dark:text-white/60 truncate">{{ p.title }} · 📍 {{ p.city }}</p>
+                <div class="flex items-center gap-2 text-[11px] text-ink/50 dark:text-white/50">
+                  <span class="text-amber-600 font-semibold">★ {{ Number(p.rating).toFixed(1) }} ({{ p.jobs }} jobs)</span>
+                  <span v-if="p.price" class="text-clay font-medium">• from ETB {{ Number(p.price).toLocaleString() }}</span>
+                </div>
               </div>
             </div>
             <button
               @click="startChatWithProvider(p)"
-              class="px-3.5 py-1.5 rounded-full bg-clay hover:bg-clay/90 text-white font-bold text-xs shrink-0 transition"
+              class="px-3.5 py-1.5 rounded-full bg-clay hover:bg-clay/90 text-white font-bold text-xs shrink-0 transition shadow-xs"
             >
               Chat →
             </button>
