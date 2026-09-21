@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { categories } from '~/data/categories'
 
 const { apiFetch, token } = useApi()
+const { resolveMediaUrl } = useProviderAvatar()
 const { isDark, toggleTheme } = useTheme()
 const { totalUnreadCount, initializeChat, loadThreads } = useChat()
 const { unreadCount: notifUnread, refreshUnread: refreshNotifUnread } = useNotifications()
@@ -9,7 +10,16 @@ const router = useRouter()
 const route = useRoute()
 
 let unreadPoll = null
+let onPhotoUpdated = null
 onMounted(async () => {
+  if (import.meta.client) {
+    onPhotoUpdated = (e: any) => {
+      if (user.value) {
+        user.value.profile_photo = e.detail
+      }
+    }
+    window.addEventListener('skilllink:profile_photo_updated', onPhotoUpdated)
+  }
   if (token.value) {
     initializeChat()
     refreshNotifUnread()
@@ -18,9 +28,14 @@ onMounted(async () => {
     }, 25000)
   }
 })
-onBeforeUnmount(() => { if (unreadPoll) clearInterval(unreadPoll) })
+onBeforeUnmount(() => {
+  if (unreadPoll) clearInterval(unreadPoll)
+  if (import.meta.client && onPhotoUpdated) {
+    window.removeEventListener('skilllink:profile_photo_updated', onPhotoUpdated)
+  }
+})
 
-const user = ref(null)
+const user = useState('skilllink_auth_user', () => null)
 const sidebarOpen = ref(false)
 const sidebarPinned = ref(false)
 const findWorkMenuOpen = ref(false)
@@ -70,9 +85,16 @@ function onDocumentClick(e) {
   }
 }
 
+function onPhotoUpdated(e) {
+  if (user.value) {
+    user.value.profile_photo = e?.detail
+  }
+}
+
 onMounted(() => {
   if (import.meta.client) {
     document.addEventListener('click', onDocumentClick)
+    window.addEventListener('skilllink:profile_photo_updated', onPhotoUpdated)
     const savedPin = localStorage.getItem('skilllink_sidebar_pinned')
     if (savedPin === 'true') {
       sidebarPinned.value = true
@@ -84,6 +106,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (import.meta.client) {
     document.removeEventListener('click', onDocumentClick)
+    window.removeEventListener('skilllink:profile_photo_updated', onPhotoUpdated)
   }
 })
 
@@ -106,12 +129,24 @@ function handleHeaderSearch() {
 
 watch(token, async (val) => {
   if (!val) { user.value = null; return }
-  try { user.value = await apiFetch('/user') } catch { user.value = null }
+  try {
+    user.value = await apiFetch('/user')
+    if (import.meta.client && user.value?.id && !user.value.profile_photo) {
+      const saved = localStorage.getItem(`skilllink_user_photo_${user.value.id}`)
+      if (saved) user.value.profile_photo = saved
+    }
+  } catch { user.value = null }
 }, { immediate: false })
 
 onMounted(async () => {
   if (token.value) {
-    try { user.value = await apiFetch('/user') } catch { user.value = null }
+    try {
+      user.value = await apiFetch('/user')
+      if (import.meta.client && user.value?.id && !user.value.profile_photo) {
+        const saved = localStorage.getItem(`skilllink_user_photo_${user.value.id}`)
+        if (saved) user.value.profile_photo = saved
+      }
+    } catch { user.value = null }
   }
 })
 
@@ -356,7 +391,13 @@ watch(() => route.fullPath, () => {
                 aria-haspopup="true"
                 :aria-expanded="userMenuOpen"
               >
-                <span class="w-8 h-8 rounded-full bg-gradient-to-br from-clay to-clay-dark flex items-center justify-center font-display text-xs font-bold text-white shadow-2xs">{{ initials }}</span>
+                <img
+                  v-if="user?.profile_photo"
+                  :src="resolveMediaUrl(user.profile_photo)"
+                  :alt="initials"
+                  class="w-8 h-8 rounded-full object-cover shadow-2xs"
+                />
+                <span v-else class="w-8 h-8 rounded-full bg-gradient-to-br from-clay to-clay-dark flex items-center justify-center font-display text-xs font-bold text-white shadow-2xs">{{ initials }}</span>
               </button>
 
               <!-- Dropdown Menu -->
@@ -375,7 +416,13 @@ watch(() => route.fullPath, () => {
                   <!-- User Header -->
                   <div class="px-4 py-3 border-b border-mist/80 dark:border-white/10 bg-mist/20 dark:bg-white/[0.02]">
                     <div class="flex items-center gap-3">
-                      <span class="w-10 h-10 rounded-full bg-gradient-to-br from-clay to-clay-dark flex items-center justify-center font-display text-sm font-bold text-white shadow-xs shrink-0">
+                      <img
+                        v-if="user?.profile_photo"
+                        :src="resolveMediaUrl(user.profile_photo)"
+                        :alt="initials"
+                        class="w-10 h-10 rounded-full object-cover shrink-0 shadow-xs border border-clay/20"
+                      />
+                      <span v-else class="w-10 h-10 rounded-full bg-gradient-to-br from-clay to-clay-dark flex items-center justify-center font-display text-sm font-bold text-white shadow-xs shrink-0">
                         {{ initials }}
                       </span>
                       <div class="min-w-0 flex-1">
@@ -503,7 +550,13 @@ watch(() => route.fullPath, () => {
         <!-- User profile summary if logged in -->
         <div v-if="user" class="p-3.5 mx-3 my-2.5 rounded-2xl bg-white dark:bg-surface-dark border border-mist dark:border-white/10 shadow-xs">
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-clay to-clay-dark text-white flex items-center justify-center font-display font-bold text-sm shrink-0 shadow-xs">
+            <img
+              v-if="user.profile_photo"
+              :src="resolveMediaUrl(user.profile_photo)"
+              :alt="initials"
+              class="w-11 h-11 rounded-full object-cover shrink-0 shadow-xs border border-clay/20"
+            />
+            <div v-else class="w-11 h-11 rounded-full bg-gradient-to-br from-clay to-clay-dark text-white flex items-center justify-center font-display font-bold text-sm shrink-0 shadow-xs">
               {{ initials }}
             </div>
             <div class="min-w-0 flex-1">

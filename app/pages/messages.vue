@@ -5,6 +5,7 @@ const route = useRoute()
 const router = useRouter()
 const { apiFetch } = useApi()
 const goBack = useGoBack('/dashboard')
+const { resolveMediaUrl } = useProviderAvatar()
 
 const {
   threads,
@@ -771,7 +772,7 @@ async function startChatWithProvider(p: any) {
           >
             <div class="flex items-center gap-3 min-w-0">
               <div v-if="p.photo" class="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-clay/20">
-                <img :src="p.photo" :alt="p.name" class="w-full h-full object-cover" />
+                <img :src="resolveMediaUrl(p.photo)" :alt="p.name" class="w-full h-full object-cover" />
               </div>
               <div v-else class="w-10 h-10 rounded-full bg-clay/15 text-clay font-bold flex items-center justify-center text-sm shrink-0">
                 {{ p.name[0] }}

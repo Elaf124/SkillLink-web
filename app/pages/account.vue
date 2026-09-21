@@ -4,10 +4,173 @@ definePageMeta({ layout: 'default', middleware: ['auth'] })
 const { apiFetch, token } = useApi()
 const router = useRouter()
 const goBack = useGoBack('/dashboard')
+const { resolveMediaUrl } = useProviderAvatar()
 
-const user = ref<any>(null)
+const user = useState<any>('skilllink_auth_user', () => null)
 const loading = ref(true)
 const activeTab = ref('profile')
+
+// ── Profile Photo Upload ──
+// ── Profile Photo Upload ──
+const photoInputRef = ref<HTMLInputElement | null>(null)
+const photoUploading = ref(false)
+const photoError = ref('')
+const photoSuccess = ref('')
+const pendingPhotoFile = ref<File | null>(null)
+
+function triggerPhotoSelect() {
+  photoInputRef.value?.click()
+}
+
+// Client-side image optimizer: bounds size to max 1024x1024 to guarantee fast, reliable upload
+async function compressImage(file: File): Promise<{ file: File; dataUrl: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Failed to read image file.'))
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string
+      const img = new Image()
+      img.onerror = () => reject(new Error('Selected file is not a readable image.'))
+      img.onload = () => {
+        const MAX_DIM = 1024
+        let w = img.width
+        let h = img.height
+        if (w > MAX_DIM || h > MAX_DIM) {
+          if (w > h) {
+            h = Math.round((h * MAX_DIM) / w)
+            w = MAX_DIM
+          } else {
+            w = Math.round((w * MAX_DIM) / h)
+            h = MAX_DIM
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          return resolve({ file, dataUrl })
+        }
+        ctx.drawImage(img, 0, 0, w, h)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '') + '.jpg', { type: 'image/jpeg' })
+            resolve({ file: optimizedFile, dataUrl: compressedDataUrl })
+          } else {
+            resolve({ file, dataUrl })
+          }
+        }, 'image/jpeg', 0.88)
+      }
+      img.src = dataUrl
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+async function uploadPhotoToServer(file: File) {
+  photoUploading.value = true
+  photoError.value = ''
+  photoSuccess.value = ''
+
+  let optimizedFile = file
+  let optimizedDataUrl = ''
+
+  try {
+    const compressed = await compressImage(file)
+    optimizedFile = compressed.file
+    optimizedDataUrl = compressed.dataUrl
+  } catch (err: any) {
+    console.warn('Image compression skipped, using raw file:', err)
+  }
+
+  // Preview immediately
+  if (optimizedDataUrl && user.value) {
+    user.value.profile_photo = optimizedDataUrl
+    window.dispatchEvent(new CustomEvent('skilllink:profile_photo_updated', { detail: optimizedDataUrl }))
+  }
+
+  let resolvedUrl: string | null = null
+
+  // 1. Try standard multipart/form-data upload
+  try {
+    const fd = new FormData()
+    fd.append('photo', optimizedFile)
+    const res: any = await apiFetch('/user/photo', { method: 'POST', body: fd })
+    resolvedUrl = res?.profile_photo || res?.user?.profile_photo || res?.data?.profile_photo
+  } catch (formErr: any) {
+    console.warn('Multipart upload failed, trying base64 fallback:', formErr)
+    // 2. Fallback to base64 JSON payload
+    if (optimizedDataUrl) {
+      try {
+        const res: any = await apiFetch('/user/photo', {
+          method: 'POST',
+          body: { photo: optimizedDataUrl }
+        })
+        resolvedUrl = res?.profile_photo || res?.user?.profile_photo || res?.data?.profile_photo
+      } catch (base64Err: any) {
+        photoError.value = base64Err?.data?.message || formErr?.data?.message || 'Failed to upload profile photo. Please try again.'
+      }
+    } else {
+      photoError.value = formErr?.data?.message || 'Failed to upload profile photo.'
+    }
+  }
+
+  if (resolvedUrl) {
+    if (user.value) user.value.profile_photo = resolvedUrl
+    if (import.meta.client) {
+      if (user.value?.id) {
+        try { localStorage.setItem(`skilllink_user_photo_${user.value.id}`, resolvedUrl) } catch {}
+      }
+      window.dispatchEvent(new CustomEvent('skilllink:profile_photo_updated', { detail: resolvedUrl }))
+    }
+    pendingPhotoFile.value = null
+    photoSuccess.value = 'Profile photo saved successfully!'
+    setTimeout(() => { photoSuccess.value = '' }, 4000)
+  }
+
+  photoUploading.value = false
+}
+
+async function onPhotoFileSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    photoError.value = 'Please select a valid image file (JPG, PNG, or WebP).'
+    return
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    photoError.value = 'Profile photo cannot exceed 15MB.'
+    return
+  }
+  photoError.value = ''
+  pendingPhotoFile.value = file
+
+  await uploadPhotoToServer(file)
+  if (photoInputRef.value) photoInputRef.value.value = ''
+}
+
+async function removeProfilePhoto() {
+  if (!user.value?.profile_photo) return
+  photoUploading.value = true
+  photoError.value = ''
+  photoSuccess.value = ''
+  user.value.profile_photo = null
+  if (import.meta.client) {
+    if (user.value?.id) {
+      try {
+        localStorage.removeItem(`skilllink_user_photo_${user.value.id}`)
+      } catch {}
+    }
+    window.dispatchEvent(new CustomEvent('skilllink:profile_photo_updated', { detail: null }))
+  }
+  try {
+    await apiFetch('/user/photo', { method: 'DELETE' })
+    photoSuccess.value = 'Profile photo removed.'
+    setTimeout(() => { photoSuccess.value = '' }, 3000)
+  } catch {}
+  photoUploading.value = false
+}
 
 const isProvider = computed(() => user.value?.role?.name === 'provider')
 const isCustomer = computed(() => user.value?.role?.name === 'customer')
@@ -242,8 +405,30 @@ async function saveProfile() {
       company_name: form.value.company_name,
       company_website: form.value.company_website,
     }
-    const updated = await apiFetch('/user', { method: 'PATCH', body: payload })
-    user.value = updated?.data ?? updated ?? user.value
+
+    if (pendingPhotoFile.value) {
+      await uploadPhotoToServer(pendingPhotoFile.value)
+    }
+
+    const currentPhoto = user.value?.profile_photo
+    if (currentPhoto && !currentPhoto.startsWith('blob:')) {
+      payload.profile_photo = currentPhoto
+    }
+
+    const updated: any = await apiFetch('/user', { method: 'PATCH', body: payload })
+    const freshUser = updated?.user ?? updated?.data ?? updated
+    if (freshUser && typeof freshUser === 'object') {
+      user.value = {
+        ...user.value,
+        ...freshUser,
+        profile_photo: freshUser.profile_photo || user.value?.profile_photo,
+      }
+    }
+    if (import.meta.client && user.value?.id && user.value?.profile_photo) {
+      try {
+        localStorage.setItem(`skilllink_user_photo_${user.value.id}`, user.value.profile_photo)
+      } catch {}
+    }
     if (isProvider.value) {
       const sanitizedAvailability = availability.value.map(slot => ({
         day_of_week: slot.day_of_week,
@@ -601,6 +786,10 @@ async function confirmDeleteAccount() {
 onMounted(async () => {
   try {
     user.value = await apiFetch('/user')
+    if (import.meta.client && user.value?.id && !user.value.profile_photo) {
+      const saved = localStorage.getItem(`skilllink_user_photo_${user.value.id}`)
+      if (saved) user.value.profile_photo = saved
+    }
     if (user.value.role?.name === 'provider') await loadProviderWorkspace()
     loadFormFromUser()
     loadNotifPreferences()
@@ -654,16 +843,64 @@ onMounted(async () => {
             <div class="bg-white dark:bg-mist-dark border border-mist dark:border-white/10 rounded-2xl p-6 mb-5">
               <p class="font-semibold text-ink dark:text-[#F0EDE6] mb-1">Profile photo</p>
               <p class="text-sm text-ink/50 dark:text-white/50 mb-5">A clear headshot helps build trust.</p>
+
+              <input
+                ref="photoInputRef"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/jpg"
+                class="hidden"
+                @change="onPhotoFileSelected"
+              />
+
               <div class="flex items-center gap-4 flex-wrap">
-                <span class="w-16 h-16 rounded-full bg-[#ffd4c0] flex items-center justify-center font-display text-lg font-semibold text-clay shrink-0">
-                  {{ (user.first_name?.[0] ?? '') + (user.last_name?.[0] ?? '') }}
-                </span>
+                <div class="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border border-clay/30 bg-[#ffd4c0]">
+                  <img
+                    v-if="user.profile_photo"
+                    :src="resolveMediaUrl(user.profile_photo)"
+                    :alt="fullName"
+                    class="w-full h-full object-cover"
+                  />
+                  <span
+                    v-else
+                    class="w-full h-full flex items-center justify-center font-display text-lg font-semibold text-clay"
+                  >
+                    {{ (user.first_name?.[0] ?? '') + (user.last_name?.[0] ?? '') }}
+                  </span>
+                  <div
+                    v-if="photoUploading"
+                    class="absolute inset-0 bg-black/50 flex items-center justify-center"
+                  >
+                    <span class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  </div>
+                </div>
+
                 <div class="flex items-center gap-3 text-sm">
-                  <button type="button" class="font-medium border border-mist dark:border-white/15 text-ink/70 dark:text-white/70 px-3.5 py-2 rounded-lg hover:border-clay/40 transition">📷 Change photo</button>
-                  <button type="button" class="font-medium text-ink/50 dark:text-white/50 px-3.5 py-2 rounded-lg hover:text-clay transition">🗑 Remove</button>
+                  <button
+                    type="button"
+                    :disabled="photoUploading"
+                    @click="triggerPhotoSelect"
+                    class="font-medium border border-mist dark:border-white/15 text-ink/70 dark:text-white/70 px-3.5 py-2 rounded-lg hover:border-clay/40 transition disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <span>📷</span> {{ user.profile_photo ? 'Change photo' : 'Upload photo' }}
+                  </button>
+                  <button
+                    v-if="user.profile_photo"
+                    type="button"
+                    :disabled="photoUploading"
+                    @click="removeProfilePhoto"
+                    class="font-medium text-ink/50 dark:text-white/50 px-3.5 py-2 rounded-lg hover:text-red-500 transition disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <span>🗑</span> Remove
+                  </button>
                 </div>
               </div>
-              <p class="text-xs text-ink/40 dark:text-white/40 mt-3">Photo uploads aren't available yet — this is a preview of the upcoming design.</p>
+
+              <p v-if="photoSuccess" class="text-xs text-emerald-600 dark:text-emerald-400 mt-2.5 font-medium flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-[10px]">✓</span>
+                <span>{{ photoSuccess }}</span>
+              </p>
+              <p v-else-if="photoError" class="text-xs text-red-500 mt-2.5 font-medium">{{ photoError }}</p>
+              <p v-else class="text-xs text-ink/40 dark:text-white/40 mt-3">JPG, PNG, or WebP. Auto-optimized on upload.</p>
             </div>
 
             <!-- Availability Status (Provider only) -->

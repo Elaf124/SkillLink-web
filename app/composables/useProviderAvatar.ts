@@ -89,12 +89,48 @@ export const useProviderAvatar = () => {
   }
 
   /**
+   * Resolves a media / storage URL to a fully qualified URL pointing to the backend.
+   * Handles relative /storage/... paths, localhost URLs, and external links.
+   */
+  const resolveMediaUrl = (url?: string | null): string => {
+    if (!url || typeof url !== 'string') return ''
+    const trimmed = url.trim()
+    if (!trimmed) return ''
+
+    if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+      return trimmed
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/storage\//i.test(trimmed)) {
+        return trimmed.replace(/^https?:\/\/[^\/]+(\/storage\/.*)$/i, `${backendBase}$1`)
+      }
+      return trimmed
+    }
+
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+    return `${backendBase}${cleanPath}`
+  }
+
+  /**
    * Resolves a photo URL for any provider.
-   * Accurately respects gender and profession to prevent gender mismatches.
+   * Prioritizes user's uploaded profile picture if available.
+   * Falls back accurately respecting gender and profession to prevent mismatches.
    */
   const getProviderAvatar = (provider: any, slot?: number): string => {
     if (!provider) return fallbackAvatar(provider)
 
+    // 1. If provider has an uploaded profile photo, use it
+    let photo = provider.user?.profile_photo || provider.profile_photo || provider.avatar || provider.user?.avatar
+    if (!photo && import.meta.client) {
+      const uId = provider.user?.id || provider.user_id || provider.id
+      if (uId) photo = localStorage.getItem(`skilllink_user_photo_${uId}`)
+    }
+    if (photo && typeof photo === 'string' && photo.trim()) {
+      return resolveMediaUrl(photo)
+    }
+
+    // 2. Otherwise use Ethiopian gender/role matched stock headshot
     const firstName = (provider.user?.first_name || provider.first_name || '').toLowerCase().trim()
     const gender = getGenderFromName(firstName)
     const title = (provider.professional_title || provider.title || provider.business_name || '').toLowerCase()
@@ -110,19 +146,18 @@ export const useProviderAvatar = () => {
   const handleAvatarError = (event: Event, provider?: any) => {
     const target = event.target as HTMLImageElement
     if (!target) return
+    target.onerror = null // Prevent recursive error firing
     const firstName = (provider?.user?.first_name || provider?.first_name || '').toLowerCase()
     const gender = getGenderFromName(firstName)
-    target.src = gender === 'female'
-      ? '/images/providers/expert_female.jpg'
-      : gender === 'male'
-        ? '/images/providers/expert_male.jpg'
-        : fallbackAvatar(provider)
+    const title = (provider?.professional_title || provider?.title || provider?.business_name || '').toLowerCase()
+    target.src = portraitFor(provider, gender, title)
   }
 
   return {
     getProviderAvatar,
     getProviderInitials,
     handleAvatarError,
+    resolveMediaUrl,
     isFemaleName,
   }
 }

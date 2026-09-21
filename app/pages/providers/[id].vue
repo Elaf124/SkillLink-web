@@ -5,7 +5,7 @@ const route = useRoute()
 const router = useRouter()
 const { apiFetch, token } = useApi()
 const goBack = useGoBack('/browse')
-const { getProviderAvatar, handleAvatarError } = useProviderAvatar()
+const { getProviderAvatar, handleAvatarError, resolveMediaUrl } = useProviderAvatar()
 const provider = ref(null)
 const reviews = ref([])
 const loading = ref(true)
@@ -474,17 +474,19 @@ function getSellerBadge(p) {
             </div>
 
             <!-- Verified Certifications & Trade Licenses -->
-            <div v-if="approvedCertifications.length" class="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+            <div class="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
               <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2">
                   <span class="text-xl">📜</span>
                   <h2 class="font-display text-xl font-bold text-slate-900 dark:text-white">Verified Certifications & Licenses</h2>
                 </div>
-                <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                <span v-if="approvedCertifications.length" class="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                   <span>✓</span> Verified by Platform
                 </span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+              <!-- When certifications exist -->
+              <div v-if="approvedCertifications.length" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div
                   v-for="cert in approvedCertifications"
                   :key="cert.id"
@@ -506,7 +508,7 @@ function getSellerBadge(p) {
                   </div>
                   <div v-if="cert.file_url || cert.credential_url" class="mt-3 pt-2.5 border-t border-emerald-200/60 dark:border-emerald-800/40">
                     <a
-                      :href="cert.file_url || cert.credential_url"
+                      :href="resolveMediaUrl(cert.file_url || cert.credential_url)"
                       target="_blank"
                       rel="noopener"
                       class="text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline inline-flex items-center gap-1"
@@ -515,6 +517,13 @@ function getSellerBadge(p) {
                     </a>
                   </div>
                 </div>
+              </div>
+
+              <!-- When no certificate is present -->
+              <div v-else class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1.5">
+                <span class="text-2xl block mb-1">📜</span>
+                <p class="font-bold text-sm text-slate-700 dark:text-slate-300">No certificate</p>
+                <p class="text-xs text-slate-400 max-w-sm mx-auto">This provider has not uploaded or verified any professional trade certificates or licenses yet.</p>
               </div>
             </div>
           </div>
@@ -531,7 +540,7 @@ function getSellerBadge(p) {
                 :key="item.id"
                 class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden card-hover-lift"
               >
-                <img v-if="item.image_url" :src="item.image_url" :alt="item.title" class="w-full h-44 object-cover" />
+                <img v-if="item.image_url" :src="resolveMediaUrl(item.image_url)" :alt="item.title" class="w-full h-44 object-cover" />
                 <div class="p-4">
                   <h3 class="font-display font-bold text-sm text-slate-900 dark:text-white mb-1">{{ item.title }}</h3>
                   <p v-if="item.description" class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{{ item.description }}</p>

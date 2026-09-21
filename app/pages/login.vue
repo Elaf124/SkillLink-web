@@ -12,6 +12,8 @@ const error = ref('')
 const loading = ref(false)
 const showPassword = ref(false)
 
+const user = useState('skilllink_auth_user', () => null)
+
 const googleAuthUrl = `${config.public.apiBase}/auth/google/redirect`
 
 async function handleLogin() {
@@ -20,6 +22,12 @@ async function handleLogin() {
   try {
     const res = await apiFetch('/login', { method: 'POST', body: form.value })
     token.value = res.token
+    if (res.user) {
+      user.value = res.user
+      if (import.meta.client && res.user.id && res.user.profile_photo) {
+        try { localStorage.setItem(`skilllink_user_photo_${res.user.id}`, res.user.profile_photo) } catch {}
+      }
+    }
     if (import.meta.client) {
       sessionStorage.removeItem('skilllink_new_provider_signup')
     }
