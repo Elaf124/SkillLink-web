@@ -10,16 +10,7 @@ const router = useRouter()
 const route = useRoute()
 
 let unreadPoll = null
-let onPhotoUpdated = null
 onMounted(async () => {
-  if (import.meta.client) {
-    onPhotoUpdated = (e: any) => {
-      if (user.value) {
-        user.value.profile_photo = e.detail
-      }
-    }
-    window.addEventListener('skilllink:profile_photo_updated', onPhotoUpdated)
-  }
   if (token.value) {
     initializeChat()
     refreshNotifUnread()
@@ -30,9 +21,6 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => {
   if (unreadPoll) clearInterval(unreadPoll)
-  if (import.meta.client && onPhotoUpdated) {
-    window.removeEventListener('skilllink:profile_photo_updated', onPhotoUpdated)
-  }
 })
 
 const user = useState('skilllink_auth_user', () => null)
