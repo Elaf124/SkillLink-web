@@ -1,9 +1,9 @@
 /**
  * server/utils/aiEngine.ts
  *
- * Domain-trained AI Knowledge Base & Semantic Engine for SkillLink.
- * Handles intent detection, specific question answering, and strict relevance matching
- * for providers and jobs.
+ * Comprehensive Domain-Trained AI Knowledge Base & Semantic Engine for SkillLink Ethiopia.
+ * Covers in-depth market pricing in ETB, step-by-step payment guides (Telebirr, CBE Birr, Chapa),
+ * milestone workflows, provider onboarding, withdrawal rules, dispute mediation, and strict trade matching.
  */
 
 export interface KnowledgeTopic {
@@ -25,76 +25,96 @@ export const KNOWLEDGE_BASE: KnowledgeTopic[] = [
       /^(howdy|yo|sup|what'?s\s+up)\b/i,
       /^(who\s+are\s+you|what\s+is\s+your\s+name|what\s+can\s+you\s+do|introduce\s+yourself)/i,
     ],
-    customerAnswer: `👋 **Selam! I am SkillLink AI**, your 24/7 assistant for Ethiopia's premier freelance and service marketplace.
+    customerAnswer: `👋 **Selam! I am SkillLink AI**, your 24/7 personal assistant for Ethiopia's premier freelance and service marketplace.
 
-Here is how I can assist you today:
-• **Find Top Providers**: Tell me what service you need (e.g., *"Find a plumber in Addis"*, *"Looking for a graphic designer"*).
-• **Escrow & Payments**: Learn how your payments are protected with Telebirr, CBE Birr, or Chapa.
-• **Post an Open Job**: Need custom bids? I can guide you on [Posting an Open Job](/jobs/post).
+Here is what I can do for you:
+• **Find Verified Providers**: Tell me what service you need (e.g., *"Find a plumber in Addis"*, *"Looking for a graphic designer"*).
+• **Market Pricing in ETB**: Ask *"How much does plumbing cost?"* or *"What are standard developer rates?"*.
+• **Payment & Escrow Protection**: Learn how your money is 100% protected with Telebirr, CBE Birr, or Chapa.
+• **Post an Open Job**: Need custom bids? I will guide you to [Post an Open Job](/jobs/post).
 • **Platform Guidance**: Ask about fees, cancellations, safety, or provider verification.
 
 What would you like help with today?`,
-    providerAnswer: `👋 **Selam! I am SkillLink AI**, your personal assistant on SkillLink.
+    providerAnswer: `👋 **Selam! I am SkillLink AI**, your assistant to help grow your service business in Ethiopia.
 
-I am here to help you grow your service business:
-• **Find Open Jobs**: Ask me for jobs in your skill (e.g., *"Show me web development jobs"*, *"High budget jobs"*).
-• **Bidding & Offers**: Learn how to write winning proposals to clients.
-• **Wallet & Payouts**: Check how to withdraw your earnings via Telebirr, CBE Birr, or Bank.
-• **Fees & Rules**: Learn about the 10% platform fee and escrow protection.
+Here is what I can help you with:
+• **Find Open Client Jobs**: Ask me for jobs in your skill (e.g., *"Show me web development jobs"*, *"High budget jobs"*).
+• **Bidding & Winning Proposals**: Learn how to write winning offers and set project milestones.
+• **Wallet & Withdrawals**: Learn how to cash out your earnings via Telebirr, CBE Birr, or Bank.
+• **Pricing & Rates**: Check market standards for your trade in ETB.
+• **Account & Verification**: Learn how to get your verified badge with your Kebele ID.
 
 What are you looking to do today?`,
   },
 
-  // ── 2. Support & Help (Placed before chat to prevent pattern overlap) ─────
+  // ── 2. Market Pricing Guide in Ethiopia (ETB) ─────────────────────────────
   {
-    id: 'support_contact',
-    title: 'Contacting Support',
+    id: 'pricing_market_guide',
+    title: 'Market Pricing Guide in ETB',
     patterns: [
-      /\b(support|customer\s+service|admin|help\s+desk|report\s+problem)\b/i,
-      /how\s+to\s+contact\s+(support|skilllink|help|admin)/i,
-      /contact\s+support/i,
+      /\b(average|standard|typical|market)\s+(price|prices|rate|rates|cost|costs)\b/i,
+      /how\s+much\s+(does|do|should)\s+(plumbing|electrician|cleaning|developer|designer|carpenter|tutor|mechanic)\s+cost/i,
+      /price\s+(range|guide|list|rates)/i,
+      /standard\s+rates/i,
     ],
-    customerAnswer: `🤝 **SkillLink Customer Support**:
+    customerAnswer: `📊 **Standard Service Market Rates in Addis Ababa (ETB)**:
 
-We are always here to assist you:
-• **Support Center**: Visit **[Support & Help](/support)** to submit an inquiry, report an issue, or view FAQs.
-• **Direct Email**: Reach our support team at \`support@skilllink.et\`.
-• **Live Assistance**: Ask me anything right here anytime 24/7!`,
-    providerAnswer: `🤝 **Provider Support**:
+Here is the realistic market pricing breakdown for verified services on SkillLink:
 
-Need assistance with account verification, job mediation, or payout inquiries?
-• Visit the **[Support Center](/support)** to submit a ticket to our admin team.
-• Email our support specialists directly at \`support@skilllink.et\`.`,
+| Service Category | Typical Rate (ETB) | Pricing Model |
+| :--- | :--- | :--- |
+| **Plumbing** (leak, tap, toilet repair) | 400 – 1,500 ETB | Fixed per job or ~400 ETB/hr |
+| **Electrical** (breaker diagnostics, wiring) | 500 – 3,500 ETB | Fixed or ~500 ETB/hr |
+| **House Cleaning** (1–3 bedroom deep clean) | 1,200 – 3,500 ETB | Fixed per session |
+| **Web & App Development** | 15,000 – 60,000+ ETB | Milestone / Project basis |
+| **Graphic Design & Logos** | 2,500 – 10,000 ETB | Fixed package |
+| **Carpentry & Furniture** (wardrobes, cabinets) | 8,000 – 25,000 ETB | Fixed custom build |
+| **Academic Tutoring** (Grade 11/12, Math, SAT) | 300 – 600 ETB / hour | Hourly |
+| **Auto Mechanic Diagnostics & Brakes** | 600 – 2,500 ETB | Fixed labor cost |
+
+💡 *Tip: You can discuss and negotiate the exact price in [Direct Messages](/messages) before accepting an offer!*`,
+    providerAnswer: `📊 **Recommended Pricing Standards for Providers (ETB)**:
+
+Setting competitive, transparent rates increases your acceptance rate by over 60%:
+• **Hourly Trades**: Plumbers (~450 ETB/hr), Electricians (~500 ETB/hr), Tutors (~350–500 ETB/hr).
+• **Fixed Packages**: House cleaning (1,500–2,500 ETB), Logo design (4,000–8,000 ETB), Custom websites (18,000–45,000 ETB).
+• **10% Platform Fee**: Remember that SkillLink charges a flat 10% on completed bookings (e.g. for a 5,000 ETB job, you receive 4,500 ETB in your wallet).`,
   },
 
-  // ── 3. How SkillLink Works ────────────────────────────────────────────────
+  // ── 3. Step-by-Step Payment Methods Guide ──────────────────────────────────
   {
-    id: 'how_it_works',
-    title: 'How SkillLink Works',
+    id: 'payment_methods_detailed',
+    title: 'Payment Methods & How to Pay',
     patterns: [
-      /how\s+(does|do)\s+(skilllink|this|it)\s+work/i,
-      /how\s+to\s+hire/i,
-      /how\s+can\s+i\s+use\s+skilllink/i,
-      /getting\s+started/i,
-      /what\s+is\s+skilllink/i,
+      /\b(telebirr|cbe|cbe\s*birr|chapa|bank\s*transfer|how\s+to\s+pay|payment\s+methods)\b/i,
+      /can\s+i\s+pay\s+with/i,
+      /step\s+by\s+step\s+pay/i,
     ],
-    customerAnswer: `**SkillLink** makes hiring trusted, verified professionals in Ethiopia safe and simple:
+    customerAnswer: `💳 **Accepted Payment Methods & Step-by-Step Guide**:
 
-1. **Find or Request**:
-   • [Browse Services](/browse) to hire verified providers directly at fixed or hourly rates.
-   • Or [Post an Open Job](/jobs/post) and receive competitive bids from multiple providers.
-2. **Chat & Agree**: Message providers directly in real-time to discuss project scope and timeline before making any commitment.
-3. **Escrow Protected Payment**: When you accept a quote, funds are safely deposited into **Escrow**. The provider does *not* receive the money yet.
-4. **Approve & Release**: Once the work is delivered and you are 100% satisfied, you confirm completion to release payment to the provider.`,
-    providerAnswer: `**How SkillLink works for Service Providers**:
+SkillLink supports Ethiopia's trusted payment gateways:
 
-1. **Complete Profile & Verification**: Set up your professional bio, skills, and upload verification ID under [Profile Settings](/profile).
-2. **Find Work**: Browse open client requests under [Find Open Jobs](/jobs) and submit competitive offers with your price and timeline.
-3. **Escrow Guarantee**: When a customer accepts your offer, the project budget is secured in escrow before you begin work, guaranteeing you will be paid.
-4. **Deliver & Get Paid**: Deliver the service, have the client approve completion, and receive **90%** of the job budget instantly in your [Wallet](/wallet).`,
+1. **Telebirr**:
+   • Select Telebirr at checkout.
+   • Enter your registered 09... phone number.
+   • You will receive a USSD push notification on your mobile phone or can scan the SuperApp QR code.
+   • Enter your Telebirr 4-digit PIN to confirm. Escrow is credited instantly!
+2. **CBE Birr & Commercial Bank of Ethiopia (CBE)**:
+   • Pay directly via CBE Mobile Banking or CBE Birr USSD (*847#).
+   • Instant confirmation locks your funds in escrow safely.
+3. **Chapa Gateway**:
+   • Accepts local Ethiopian debit/ATM cards (Awash, Dashen, Nib, Zemen, etc.) and international Visa/Mastercard cards.
+
+⚠️ **Safety Rule**: Never pay providers directly in cash or off-platform. Cash payments forfeit 100% of your escrow and fraud protection.`,
+    providerAnswer: `💳 **Withdrawing Your Payouts**:
+
+Once a customer confirms job completion:
+• Funds appear instantly in your **Available Wallet Balance**.
+• Payouts can be transferred to **Telebirr** (within minutes), **CBE Birr**, or your **Commercial Bank account** (same day).
+• Add or edit your account numbers under [Payout Methods](/payouts).`,
   },
 
-  // ── 4. Escrow & Security ──────────────────────────────────────────────────
+  // ── 4. Escrow & Safety Protection ─────────────────────────────────────────
   {
     id: 'escrow_security',
     title: 'Escrow Protection & Payment Security',
@@ -105,67 +125,62 @@ Need assistance with account verification, job mediation, or payout inquiries?
     ],
     customerAnswer: `🛡️ **100% Escrow Protection on SkillLink**:
 
-Your payments are completely protected against fraud:
-• **Funds are Held in Trust**: When you book a service or accept a proposal, your payment is placed in a secure platform escrow vault.
-• **Providers are Paid ONLY on Approval**: The provider cannot touch the money until you verify that the work has been completed satisfactorily.
-• **Dispute Resolution**: If a provider fails to show up or delivers incomplete work, you can raise a dispute, and our admin team will review and issue a refund.
-• **Never Pay Direct Cash**: Always keep transactions on SkillLink to remain protected by our escrow guarantee.`,
+Your money is completely safe throughout every booking:
+• **Funds Locked in Trust**: When you accept an offer, your payment goes into an escrow vault. The provider CANNOT access it yet.
+• **Paid ONLY Upon Your Approval**: Funds are released to the provider only when you click "Confirm & Complete".
+• **Dispute Protection**: If a provider does not show up, abandons the job, or does poor work, you can open a dispute. Our admin team will inspect the case and issue a full or partial refund.
+• **Zero Financial Risk**: You never pay upfront for unverified work.`,
     providerAnswer: `🛡️ **Payment Security for Providers**:
 
-• **Guaranteed Payment**: When a client hires you on SkillLink, their payment is locked in Escrow before you begin working. You never have to worry about unpaid invoices.
-• **Clear Milestones**: Deliver your work through the platform and mark it complete.
-• **Dispute Support**: If a client unjustly refuses to release payment for delivered work, our admin support team steps in to inspect evidence and release your funds.`,
+• **Guaranteed Escrow**: You never start work without proof of client funding. The client's budget is locked in escrow before you begin.
+• **No Stolen Work**: As long as you submit deliverables through SkillLink chat and milestones, our admin team guarantees your payout even if a client becomes unresponsive.`,
   },
 
   // ── 5. Platform Fees & Commission ─────────────────────────────────────────
   {
     id: 'platform_fees',
-    title: 'Platform Fees & Pricing',
+    title: 'Platform Fees & Pricing Structure',
     patterns: [
       /\b(fee|fees|commission|percentage|cut|charge|charges|cost|costs|pricing)\b/i,
       /how\s+much\s+(does\s+it\s+cost|do\s+you\s+charge|is\s+the\s+fee)/i,
       /10\s*%/i,
     ],
-    customerAnswer: `💰 **Pricing for Customers**:
-• **100% Free to Search & Post**: It costs nothing to browse providers, chat, or post open job requests.
-• **Transparent Pricing**: You pay only the agreed service rate or accepted bid amount. No hidden subscription fees!
-• **Payment Gateway**: Standard local processing (Telebirr/CBE/Chapa) may apply nominal transaction fees depending on your chosen bank.`,
+    customerAnswer: `💰 **Pricing Structure for Customers**:
+• **100% Free**: It costs zero ETB to search providers, chat, or post jobs.
+• **No Hidden Markups**: You pay only the agreed contract price shown on the provider's quote.
+• **Escrow is Free**: Platform escrow protection is included at no extra charge.`,
     providerAnswer: `💰 **Platform Fee for Providers**:
-• SkillLink charges a flat **10% platform fee** on successfully completed jobs.
-• You keep **90%** of your total contract value directly in your wallet balance.
-• **Example**: On a **5,000 ETB** job, you earn **4,500 ETB** net, and SkillLink retains 500 ETB for escrow protection, platform hosting, and payment infrastructure.
-• There are no monthly fees or charges to submit bids!`,
+• SkillLink charges a flat **10% platform fee** deducted automatically when a client approves completed work.
+• **You keep 90%**: On a **10,000 ETB** job, you receive **9,000 ETB** in your wallet.
+• SkillLink's 10% fee covers escrow infrastructure, payment gateway processing, verified badges, and client dispute resolution.
+• There are no monthly subscriptions or fees to submit offers!`,
   },
 
-  // ── 6. Payment Methods ────────────────────────────────────────────────────
+  // ── 6. Fixed Price vs Hourly Rates ────────────────────────────────────────
   {
-    id: 'payment_methods',
-    title: 'Supported Payment Methods',
+    id: 'pricing_models',
+    title: 'Fixed Price vs. Hourly Rates',
     patterns: [
-      /\b(telebirr|cbe|cbe\s*birr|chapa|payment\s+method|how\s+to\s+pay|cash)\b/i,
-      /can\s+i\s+pay\s+with/i,
-      /what\s+payment\s+methods/i,
-      /bank\s+transfer/i,
+      /\b(fixed|hourly|milestone|milestones|price\s+type)\b/i,
+      /difference\s+between\s+(fixed|hourly)/i,
+      /should\s+i\s+choose\s+fixed\s+or\s+hourly/i,
     ],
-    customerAnswer: `💳 **Accepted Payment Methods on SkillLink**:
+    customerAnswer: `⏱️ **Fixed Price vs. Hourly Rates**:
 
-We support Ethiopia's most popular and convenient payment options:
-• **Telebirr**: Fast mobile checkout with direct confirmation.
-• **CBE Birr & Commercial Bank of Ethiopia (CBE)**: Seamless bank transfer and mobile wallet.
-• **Chapa Gateway**: Accepts local debit cards, Awash Bank, Dashen Bank, and international cards.
+• **Fixed Price (Recommended for defined projects)**:
+  - Best for: Painting a room, fixing a leaking pipe, cleaning an apartment, designing a logo.
+  - You agree on the total price upfront in ETB. You know the exact cost before starting.
+• **Hourly Rate (Recommended for open-ended work)**:
+  - Best for: Tutoring, software consultation, extensive electrical troubleshooting.
+  - The provider logs hours, and payment is calculated based on approved time logged.`,
+    providerAnswer: `⏱️ **Setting Your Pricing Model**:
 
-⚠️ **Important**: For your safety, never pay providers cash in person or off-platform. Off-platform payments void your escrow protection.`,
-    providerAnswer: `💳 **Receiving Your Earnings**:
-
-You can withdraw your wallet balance using:
-• **Telebirr**: Instant mobile wallet payout.
-• **CBE Birr**: Direct mobile bank transfer.
-• **Direct Bank Account**: Transfer directly to your Ethiopian commercial bank account.
-
-Configure your payout details anytime under [Payout Methods](/payouts) or in your [Wallet](/wallet).`,
+You can offer both Fixed and Hourly services under your profile:
+• Set fixed prices for standard catalog services (e.g. *"OBD2 Car Diagnostic — 600 ETB"*).
+• Set hourly rates for consultative services (e.g. *"Senior Math Tutoring — 400 ETB/hr"*).`,
   },
 
-  // ── 7. How to Post a Job ──────────────────────────────────────────────────
+  // ── 7. How to Post a Job & Receive Bids ────────────────────────────────────
   {
     id: 'post_a_job',
     title: 'How to Post a Job',
@@ -178,49 +193,49 @@ Configure your payout details anytime under [Payout Methods](/payouts) or in you
     ],
     customerAnswer: `📝 **How to Post an Open Job on SkillLink**:
 
-If you have a custom project or want multiple providers to bid with competitive prices:
-1. Navigate to **[Post an Open Job](/jobs/post)**.
-2. Enter a descriptive title (e.g., *"Fix leaking bathroom pipe in Bole"*).
-3. Select the appropriate **Category** and your **Location / Subcity**.
-4. Set your budget in **ETB** (fixed price or hourly) and expected deadline.
-5. Publish your job! Verified providers in that field will receive alerts and submit custom proposals for you to compare.`,
+If you want multiple providers to bid with competitive offers:
+1. Go to **[Post an Open Job](/jobs/post)**.
+2. Enter a clear title (e.g., *"Emergency bathroom pipe leak repair in Bole"*).
+3. Select your **Category** (e.g. *Home Services > Plumber*) and **Location / Subcity**.
+4. Set your budget in **ETB** (e.g. 1,500 ETB) and desired completion date.
+5. Click **Publish Job**! Verified providers will be notified immediately and submit custom proposals with their price and timeline.`,
     providerAnswer: `💼 **Finding & Bidding on Jobs**:
 
-Clients post new project requests every day. You can review all active jobs and submit proposals here:
+Clients post new projects across Addis Ababa daily. You can review all active jobs and submit proposals here:
 👉 **[Browse Open Jobs](/jobs)**
 
-Tips for winning jobs:
-• Filter by your category and city.
-• Read the client's description carefully.
-• Submit a polite, detailed offer stating your price and completion time.`,
+Tips for winning proposals:
+• Submit offers quickly when a job is posted.
+• Outline your relevant experience and similar projects in your proposal message.
+• Offer a fair, competitive rate in ETB.`,
   },
 
   // ── 8. Bidding & Proposals for Providers ──────────────────────────────────
   {
     id: 'provider_bidding',
-    title: 'Bidding & Submitting Offers',
+    title: 'Bidding & Submitting Winning Proposals',
     patterns: [
       /how\s+(to|do\s+i)\s+(bid|send\s+offer|make\s+offer|submit\s+offer|submit\s+proposal|win\s+jobs)/i,
       /\b(bid|bidding|proposal|proposals)\b/i,
     ],
-    customerAnswer: `💼 **Comparing Bids on SkillLink**:
+    customerAnswer: `💼 **Reviewing Provider Bids**:
 
-When you post an open job, verified providers submit custom proposals with their price, completion days, and message. You can review their profiles, check past reviews, and chat with them before accepting an offer!`,
+When you post an open job, verified providers submit custom proposals with their price, completion days, and portfolio. You can review their profiles, check past ratings, and chat with them in [Messages](/messages) before accepting!`,
     providerAnswer: `🎯 **How to Bid & Win Jobs on SkillLink**:
 
-1. **Browse Open Jobs**: Head to **[Find Open Jobs](/jobs)** to view client project requests.
-2. **Review Requirements**: Click on a job to read the full scope, budget, and location.
-3. **Submit Your Offer**:
+1. **Browse Open Jobs**: Head to **[Find Open Jobs](/jobs)** to view active client requests.
+2. **Review Scope**: Click on a job to check the requirements, location, and client budget.
+3. **Submit Your Custom Offer**:
    • Enter your **Price (ETB)** and **Estimated Days** to complete.
-   • Write a persuasive cover message highlighting your relevant experience and similar past projects.
-4. **Negotiate in Chat**: If the client is interested, they can message you directly on SkillLink to finalize details.
-5. **Start Work When Escrow is Funded**: Once the client accepts your offer, the payment is secured in escrow and you can begin!`,
+   • Write a professional cover pitch explaining why you are the best fit.
+4. **Negotiate in Chat**: The client can message you directly on SkillLink to clarify details.
+5. **Start Work After Escrow Funding**: Once the client accepts your offer, the payment is locked in escrow and you can start!`,
   },
 
-  // ── 9. How to Become a Provider & Verification ────────────────────────────
+  // ── 9. Provider Onboarding & Verification ─────────────────────────────────
   {
     id: 'provider_verification',
-    title: 'Provider Registration & Verification',
+    title: 'Provider Registration & Verification (Kebele ID)',
     patterns: [
       /how\s+to\s+become\s+a\s+provider/i,
       /join\s+as\s+(a\s+)?provider/i,
@@ -233,18 +248,18 @@ When you post an open job, verified providers submit custom proposals with their
     customerAnswer: `✅ **Provider Verification Standards on SkillLink**:
 
 Every verified provider on SkillLink undergoes admin review:
-• **Identity Verification**: Providers must submit their valid Kebele ID, National ID, or Passport.
-• **Skill & Credential Check**: Relevant trade certifications or professional references are checked.
-• Look for the **Verified Badge** on provider profiles to hire with confidence.`,
+• **Identity Document**: Providers must submit their valid Kebele ID, Ethiopian National ID (Fayda), or Passport.
+• **Skill & Credential Check**: Relevant trade certifications or professional references are examined.
+• Look for the **Verified Badge** on provider profiles to hire with complete confidence.`,
     providerAnswer: `🚀 **How to Become a Verified Provider**:
 
 1. Register an account and select the **Service Provider** role.
-2. Complete your profile under [Provider Profile](/profile): add your professional title, hourly or fixed services, and past work portfolio.
-3. Submit verification documents under **Verification**: upload a clear photo of your **Kebele ID, Passport, or Business License**.
+2. Complete your profile under [Provider Profile](/profile): add your professional title, hourly/fixed services, and past work portfolio.
+3. Submit verification documents under **Verification**: upload a clear photo of your **Kebele ID, Ethiopian Passport, or Business License**.
 4. Our administration team typically reviews and verifies documents within **24 to 48 hours**. Once approved, your profile receives the Verified badge and you can start taking bookings!`,
   },
 
-  // ── 10. Cancellations & Refunds ───────────────────────────────────────────
+  // ── 10. Cancellations, Refunds & Disputes ─────────────────────────────────
   {
     id: 'cancellation_refunds',
     title: 'Cancellations, Refunds & Disputes',
@@ -255,60 +270,43 @@ Every verified provider on SkillLink undergoes admin review:
     ],
     customerAnswer: `🔄 **Cancellation & Refund Policy**:
 
-• **Before Work Starts**: If you or the provider cancel before any work has commenced, your escrow deposit is **100% refunded** back to your wallet or payment account.
-• **During Work / Quality Issues**: If a provider fails to perform the work or provides unsatisfactory results, do **NOT** mark the job as complete.
-• **Open a Dispute**: Click "Report Issue" or "Open Dispute" on your [Bookings Page](/bookings), or reach out to [Support](/support). Our support team will inspect the conversation and work evidence to issue a fair refund.`,
+• **Before Work Starts**: If you or the provider cancel before work has started, your escrow deposit is **100% refunded** immediately back to your wallet or original payment account.
+• **During Work / Quality Issues**: If a provider fails to perform the work or provides unsatisfactory results, do **NOT** click "Confirm Complete".
+• **Open a Dispute**: Click "Open Dispute" on your [Bookings Page](/bookings), or contact [Support](/support). Our support team will inspect the chat and deliverables to issue a full or partial refund within 24 hours.`,
     providerAnswer: `🔄 **Cancellations & Dispute Guidelines for Providers**:
 
-• Always communicate through SkillLink's in-app chat so there is clear record of agreements, deliverables, and timeline.
-• If a client becomes unresponsive or requests work outside the agreed contract, you can contact [Support](/support) for mediation.
-• Escrowed funds are protected and can only be cancelled after mutual agreement or admin review.`,
+• Always communicate through SkillLink's in-app chat so there is a documented record of agreements and deliverables.
+• If a client requests work outside the contract without additional payment, contact [Support](/support) for mediation.
+• Escrowed funds are protected and can only be refunded upon mutual agreement or official admin arbitration.`,
   },
 
   // ── 11. Provider Wallet & Withdrawals ─────────────────────────────────────
   {
     id: 'wallet_withdrawals',
-    title: 'Wallet Earnings & Payouts',
+    title: 'Wallet Earnings & Withdrawals',
     patterns: [
       /\b(withdraw|withdrawal|wallet|payout|payouts|cash\s*out|take\s+out\s+money)\b/i,
       /how\s+(do\s+i|to)\s+get\s+my\s+money/i,
       /when\s+do\s+i\s+get\s+paid/i,
+      /minimum\s+withdrawal/i,
     ],
-    customerAnswer: `💼 **Customer Billing**:
+    customerAnswer: `💼 **Customer Invoices & Billing**:
 You can track all your payments, invoices, and active escrow deposits securely under your [Bookings](/bookings) dashboard.`,
     providerAnswer: `💵 **Withdrawing Your Earnings**:
 
 1. Go to your **[Wallet Dashboard](/wallet)**.
-2. Once a client confirms job completion, your earnings (90% of contract price) are credited instantly to your **Available Balance**.
-3. Click **Withdraw Funds**, enter the amount, and select your payout method (Telebirr, CBE Birr, or Commercial Bank account).
-4. Withdrawal requests are processed quickly, usually within minutes to 24 hours depending on the banking network.`,
+2. Once a client confirms job completion, your earnings (90% of contract value) are credited instantly to your **Available Balance**.
+3. Click **Withdraw Funds**, enter the amount (minimum withdrawal is **50 ETB**), and select your payout method:
+   • **Telebirr**: Fast mobile wallet payout (usually 15–30 minutes).
+   • **CBE Birr**: Direct mobile bank transfer.
+   • **Bank Account**: Commercial Bank of Ethiopia (CBE), Awash, or Dashen bank transfer.
+4. There is 0 withdrawal fee charged by SkillLink!`,
   },
 
-  // ── 12. Reviews & Ratings ────────────────────────────────────────────────
-  {
-    id: 'reviews_ratings',
-    title: 'Reviews & Feedback System',
-    patterns: [
-      /\b(review|reviews|rating|ratings|star|stars|feedback|testimonial)\b/i,
-      /can\s+i\s+leave\s+a\s+review/i,
-      /how\s+do\s+reviews\s+work/i,
-    ],
-    customerAnswer: `⭐ **Verified Reviews on SkillLink**:
-
-• Only clients who have completed and paid for a booking through SkillLink can rate a provider.
-• Once your job is completed, you will be prompted to leave a 1 to 5-star rating and written review.
-• This ensures 100% authentic, tamper-proof reviews that reflect real client experiences.`,
-    providerAnswer: `⭐ **Building Your Reputation**:
-
-• Maintaining high ratings (4.5+ stars) and positive feedback boosts your visibility in search results.
-• Every completed booking allows your client to leave a verified review.
-• Always deliver high-quality work and communicate professionally to earn 5-star reviews!`,
-  },
-
-  // ── 13. In-App Chat & Direct Messaging ───────────────────────────────────
+  // ── 12. In-App Chat & Direct Messaging ───────────────────────────────────
   {
     id: 'messaging_chat',
-    title: 'In-App Direct Chat',
+    title: 'In-App Direct Chat & Negotiation',
     patterns: [
       /\b(chat|message|messages|messaging|inbox)\b/i,
       /can\s+i\s+(talk\s+to|message)\s+(the\s+)?provider/i,
@@ -326,7 +324,7 @@ You can track all your payments, invoices, and active escrow deposits securely u
 • You can send custom proposals and negotiate terms right within the chat conversation!`,
   },
 
-  // ── 14. Categories & Available Services ──────────────────────────────────
+  // ── 13. Categories & Available Services ──────────────────────────────────
   {
     id: 'categories_overview',
     title: 'Categories & Services Offered',
@@ -346,10 +344,10 @@ You can track all your payments, invoices, and active escrow deposits securely u
 • **Events & Media**: Event Planners, Photographers, Videographers, Decorators
 • **Moving & Delivery**: Moving Services, Couriers, Delivery Personnel
 
-You can explore all available providers under **[Browse All Services](/browse)**!`,
+Explore all verified providers under **[Browse All Services](/browse)**!`,
     providerAnswer: `🛠️ **Popular Categories on SkillLink**:
 
-We have active client demand across:
+Active client demand across:
 • Home Improvement (Plumbing, Electrical, Carpentry, Painting)
 • Software & Web Development
 • Graphic Design & Creative Media
@@ -360,10 +358,10 @@ We have active client demand across:
 Browse open jobs in your field under **[Find Open Jobs](/jobs)**!`,
   },
 
-  // ── 15. Locations & Regional Coverage ─────────────────────────────────────
+  // ── 14. Locations & Regional Coverage ─────────────────────────────────────
   {
     id: 'locations_coverage',
-    title: 'Locations & Coverage',
+    title: 'Locations & Regional Coverage',
     patterns: [
       /\b(location|locations|city|cities|area|areas)\b/i,
       /where\s+(are\s+you|is\s+skilllink|located|based|do\s+you\s+operate)/i,
@@ -378,6 +376,28 @@ Browse open jobs in your field under **[Find Open Jobs](/jobs)**!`,
     providerAnswer: `📍 **Service Locations**:
 
 You can accept local on-site jobs within your city (Addis Ababa, Hawassa, Adama, Bahir Dar, etc.) as well as remote digital projects that can be done from anywhere! Update your city in [Profile Settings](/profile).`,
+  },
+
+  // ── 15. Customer Support & Assistance ─────────────────────────────────────
+  {
+    id: 'support_contact',
+    title: 'Contacting Support',
+    patterns: [
+      /\b(support|customer\s+service|admin|help\s+desk|report\s+problem)\b/i,
+      /how\s+to\s+contact\s+(support|skilllink|help|admin)/i,
+      /contact\s+support/i,
+    ],
+    customerAnswer: `🤝 **SkillLink Customer Support**:
+
+We are always here to assist you:
+• **Support Center**: Visit **[Support & Help](/support)** to submit an inquiry, report an issue, or view FAQs.
+• **Direct Email**: Reach our support team at \`support@skilllink.et\`.
+• **Live Assistance**: Ask me anything right here anytime 24/7!`,
+    providerAnswer: `🤝 **Provider Support**:
+
+Need assistance with account verification, job mediation, or payout inquiries?
+• Visit the **[Support Center](/support)** to submit a ticket to our admin team.
+• Email our support specialists directly at \`support@skilllink.et\`.`,
   },
 ]
 
@@ -448,12 +468,15 @@ export function findBestFaqMatch(message: string, isProvider: boolean): Knowledg
   // Secondary match: check if key questions are contained
   if (cleanMsg.includes('how does') || cleanMsg.includes('how to') || cleanMsg.includes('can i') || cleanMsg.includes('what is') || cleanMsg.includes('tell me about')) {
     if (cleanMsg.includes('pay') || cleanMsg.includes('telebirr') || cleanMsg.includes('cbe')) {
-      return KNOWLEDGE_BASE.find(k => k.id === 'payment_methods') || null
+      return KNOWLEDGE_BASE.find(k => k.id === 'payment_methods_detailed') || null
+    }
+    if (cleanMsg.includes('price') || cleanMsg.includes('rate') || cleanMsg.includes('cost')) {
+      return KNOWLEDGE_BASE.find(k => k.id === 'pricing_market_guide') || null
     }
     if (cleanMsg.includes('escrow') || cleanMsg.includes('safe') || cleanMsg.includes('scam')) {
       return KNOWLEDGE_BASE.find(k => k.id === 'escrow_security') || null
     }
-    if (cleanMsg.includes('fee') || cleanMsg.includes('commission') || cleanMsg.includes('cost')) {
+    if (cleanMsg.includes('fee') || cleanMsg.includes('commission')) {
       return KNOWLEDGE_BASE.find(k => k.id === 'platform_fees') || null
     }
     if (cleanMsg.includes('cancel') || cleanMsg.includes('refund')) {
@@ -470,9 +493,6 @@ export function findBestFaqMatch(message: string, isProvider: boolean): Knowledg
     }
     if (cleanMsg.includes('chat') || cleanMsg.includes('message')) {
       return KNOWLEDGE_BASE.find(k => k.id === 'messaging_chat') || null
-    }
-    if (cleanMsg.includes('review') || cleanMsg.includes('rating')) {
-      return KNOWLEDGE_BASE.find(k => k.id === 'reviews_ratings') || null
     }
   }
 

@@ -2,9 +2,11 @@
  * POST /api/ai-chat
  *
  * Domain-trained AI Assistant for SkillLink Ethiopia.
- * - Customer Role: Answers marketplace questions & accurately recommends matched verified providers.
- * - Provider Role: Answers provider-specific questions & accurately recommends matching open jobs.
- * - Dual Engine: Powered by Google Gemini (when key configured) with instant fallback
+ * - Multi-source Backend: Fetches live provider and job data from local backend (127.0.0.1:8000)
+ *   or production Render API.
+ * - Customer Role: Answers marketplace questions, market rates in ETB, & accurately recommends matched verified providers.
+ * - Provider Role: Answers provider-specific questions, bidding tips, wallet payouts, & recommends matching open jobs.
+ * - Dual Engine: Powered by Google Gemini (when AIzaSy... key configured) with instant fallback
  *   to the local trained domain knowledge engine.
  */
 
@@ -34,7 +36,6 @@ interface GeminiResponse {
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const rawApiKey = (config.geminiApiKey || process.env.GEMINI_API_KEY || '').trim()
-  // Valid Google AI Studio Gemini API keys begin with AIzaSy...
   const isValidGeminiKey = rawApiKey.startsWith('AIzaSy')
   const apiKey = isValidGeminiKey ? rawApiKey : null
 
@@ -52,22 +53,25 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const backendBase = config.public.apiBase || 'https://skilllink-8wzw.onrender.com/api'
+  // Support both local development backend and remote production backend
+  const configuredBase = config.public.apiBase || 'https://skilllink-8wzw.onrender.com/api'
+  const candidateBases = [
+    'http://127.0.0.1:8000/api',
+    configuredBase,
+  ]
+
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (body.token) headers['Authorization'] = `Bearer ${body.token}`
 
   // ─────────────────────────────────────────────────────────────
   // 1. FAST DOMAIN FAQ & INTENT RESOLUTION
   // ─────────────────────────────────────────────────────────────
-  // If the question is a direct specific platform question (escrow, fee, cancellation,
-  // registration, payment, how it works, etc.) and NOT a search for a provider/job,
-  // answer immediately with the best specialized answer!
   const faqMatch = findBestFaqMatch(userMessage, isProviderRole)
   const isExplicitSearch = isProviderRole
     ? isJobSearchQuery(userMessage)
     : isProviderSearchQuery(userMessage)
 
-  // If it's a clear FAQ match and not a search, provide the specialized answer immediately
+  // If it's a clear FAQ match and not an explicit search, provide the specialized answer immediately
   if (faqMatch && !isExplicitSearch) {
     const answer = isProviderRole
       ? (faqMatch.providerAnswer || faqMatch.customerAnswer)
@@ -87,26 +91,32 @@ export default defineEventHandler(async (event) => {
     let rawJobs: any[] = []
     let jobsContext = ''
 
-    try {
-      const [res1, res2] = await Promise.allSettled([
-        $fetch<any>(`${backendBase}/jobs?page=1`, { headers }),
-        $fetch<any>(`${backendBase}/jobs?page=2`, { headers }),
-      ])
-      const list1 = res1.status === 'fulfilled' ? (res1.value?.data ?? res1.value ?? []) : []
-      const list2 = res2.status === 'fulfilled' ? (res2.value?.data ?? res2.value ?? []) : []
-      rawJobs = [...(Array.isArray(list1) ? list1 : []), ...(Array.isArray(list2) ? list2 : [])]
-        .filter((j: any) => j.status === 'open')
+    for (const base of candidateBases) {
+      try {
+        const [res1, res2] = await Promise.allSettled([
+          $fetch<any>(`${base}/jobs?page=1`, { headers, timeout: 3000 }),
+          $fetch<any>(`${base}/jobs?page=2`, { headers, timeout: 3000 }),
+        ])
+        const list1 = res1.status === 'fulfilled' ? (res1.value?.data ?? res1.value ?? []) : []
+        const list2 = res2.status === 'fulfilled' ? (res2.value?.data ?? res2.value ?? []) : []
+        const fetched = [...(Array.isArray(list1) ? list1 : []), ...(Array.isArray(list2) ? list2 : [])]
+          .filter((j: any) => j.status === 'open')
 
-      jobsContext = rawJobs.map((j: any) =>
-        `[Job #${j.id}] ${j.title} | Category: ${j.category?.name || 'General'} | Budget: ${Number(j.budget ?? 0).toLocaleString()} ETB | Location: ${j.location || 'Addis Ababa'}\nDescription: ${j.description || ''}`
-      ).join('\n\n')
-    } catch (err) {
-      console.warn('[ai-chat] failed to fetch jobs from backend:', err)
+        if (fetched.length > 0) {
+          rawJobs = fetched
+          break
+        }
+      } catch {
+        // try next candidate base
+      }
     }
+
+    jobsContext = rawJobs.map((j: any) =>
+      `[Job #${j.id}] ${j.title} | Category: ${j.category?.name || 'General'} | Budget: ${Number(j.budget ?? 0).toLocaleString()} ETB | Location: ${j.location || 'Addis Ababa'}\nDescription: ${j.description || ''}`
+    ).join('\n\n')
 
     // Local Trained Fallback for Provider
     function generateProviderSmartFallback() {
-      // Check FAQ again
       if (faqMatch) {
         return {
           reply: faqMatch.providerAnswer || faqMatch.customerAnswer,
@@ -127,7 +137,6 @@ export default defineEventHandler(async (event) => {
         return { reply, jobs: matchedJobs }
       }
 
-      // If user was looking for a job but none matched
       if (isExplicitSearch) {
         return {
           reply: `I couldn't find active open jobs specifically matching "${userMessage}".\n\nNew client jobs are posted daily! You can browse all current opportunities under **[Find Open Jobs](/jobs)** or set alerts for your category.`,
@@ -135,20 +144,17 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // General helpful provider response
       return {
         reply: `I am here to help you succeed on SkillLink! You can:\n• Ask for open client jobs (e.g. *"Show me web development jobs"*, *"High budget jobs"*)\n• Learn about [Fees & Escrow Protection](/faq)\n• Check your earnings under **[Wallet](/wallet)**\n• Update your services & portfolio in **[Profile Settings](/profile)**`,
         jobs: []
       }
     }
 
-    // If no valid Gemini API key, use the local trained engine
     if (!apiKey) {
       const result = generateProviderSmartFallback()
       return { reply: result.reply, jobs: result.jobs, providers: [] }
     }
 
-    // Try Google Gemini with official endpoints
     const modelsToTry = [
       'gemini-2.0-flash',
       'gemini-1.5-flash',
@@ -159,7 +165,7 @@ export default defineEventHandler(async (event) => {
 Knowledge Base Context:
 - Platform fee: Exactly 10% on completed jobs. Providers keep 90% in wallet.
 - Escrow: Client deposits budget into escrow before work begins; funds are released to provider upon client approval.
-- Payouts: Providers withdraw via Telebirr, CBE Birr, or Bank Account from /wallet.
+- Payouts: Providers withdraw via Telebirr, CBE Birr, or Bank Account from /wallet (minimum 50 ETB).
 - Proposals: Providers browse /jobs and submit custom offers (price, days, pitch).
 - NEVER recommend other providers to a provider!
 - When recommending jobs, pick 2-4 jobs ONLY from the live data below.
@@ -207,7 +213,6 @@ ${jobsContext || 'No open jobs available.'}
       }
     }
 
-    // Fallback if Gemini fails
     const result = generateProviderSmartFallback()
     return { reply: result.reply, jobs: result.jobs, providers: [] }
 
@@ -218,59 +223,64 @@ ${jobsContext || 'No open jobs available.'}
     let rawProviders: any[] = []
     let providerContext = ''
 
-    try {
-      const [page1, page2, page3] = await Promise.allSettled([
-        $fetch<any>(`${backendBase}/services?page=1`, { headers }),
-        $fetch<any>(`${backendBase}/services?page=2`, { headers }),
-        $fetch<any>(`${backendBase}/services?page=3`, { headers }),
-      ])
+    for (const base of candidateBases) {
+      try {
+        const pages = await Promise.allSettled([
+          $fetch<any>(`${base}/services?page=1`, { headers, timeout: 3000 }),
+          $fetch<any>(`${base}/services?page=2`, { headers, timeout: 3000 }),
+          $fetch<any>(`${base}/services?page=3`, { headers, timeout: 3000 }),
+          $fetch<any>(`${base}/services?page=4`, { headers, timeout: 3000 }),
+          $fetch<any>(`${base}/services?page=5`, { headers, timeout: 3000 }),
+        ])
 
-      const allServices: any[] = []
-      for (const p of [page1, page2, page3]) {
-        if (p.status === 'fulfilled') allServices.push(...(p.value?.data ?? []))
-      }
+        const allServices: any[] = []
+        for (const p of pages) {
+          if (p.status === 'fulfilled') allServices.push(...(p.value?.data ?? []))
+        }
 
-      const providerMap = new Map<number, any>()
-      for (const svc of allServices) {
-        const pid = svc.provider?.id
-        if (!pid) continue
-        if (!providerMap.has(pid)) {
-          providerMap.set(pid, {
-            id: pid,
-            name: `${svc.provider?.user?.first_name ?? ''} ${svc.provider?.user?.last_name ?? ''}`.trim(),
-            title: svc.provider?.professional_title ?? '',
-            rating: Number(svc.provider?.average_rating ?? 5.0).toFixed(1),
-            completed_jobs: svc.provider?.completed_jobs ?? 0,
-            city: svc.provider?.user?.city ?? 'Addis Ababa',
-            bio: svc.provider?.bio ?? '',
-            services: [],
+        const providerMap = new Map<number, any>()
+        for (const svc of allServices) {
+          const pid = svc.provider?.id
+          if (!pid) continue
+          if (!providerMap.has(pid)) {
+            providerMap.set(pid, {
+              id: pid,
+              name: `${svc.provider?.user?.first_name ?? ''} ${svc.provider?.user?.last_name ?? ''}`.trim(),
+              title: svc.provider?.professional_title ?? '',
+              rating: Number(svc.provider?.average_rating ?? 5.0).toFixed(1),
+              completed_jobs: svc.provider?.completed_jobs ?? 0,
+              city: svc.provider?.user?.city ?? 'Addis Ababa',
+              bio: svc.provider?.bio ?? '',
+              services: [],
+            })
+          }
+          providerMap.get(pid).services.push({
+            id: svc.id,
+            title: svc.title,
+            price: svc.price,
+            price_type: svc.price_type,
+            category: svc.category?.name ?? '',
           })
         }
-        providerMap.get(pid).services.push({
-          id: svc.id,
-          title: svc.title,
-          price: svc.price,
-          price_type: svc.price_type,
-          category: svc.category?.name ?? '',
-        })
+
+        if (providerMap.size > 0) {
+          rawProviders = Array.from(providerMap.values())
+          break
+        }
+      } catch {
+        // try next candidate base
       }
-
-      rawProviders = Array.from(providerMap.values())
-
-      providerContext = rawProviders.map(p => {
-        const svcList = p.services.slice(0, 3).map((s: any) =>
-          `    • ${s.title} — ${Number(s.price).toLocaleString()} ETB${s.price_type === 'hourly' ? '/hr' : ''} (${s.category})`
-        ).join('\n')
-        return `[Provider #${p.id}] ${p.name} | ${p.title} | ⭐${p.rating} | ${p.completed_jobs} jobs | City: ${p.city || 'Addis Ababa'}\n${svcList}`
-      }).join('\n\n')
-
-    } catch (err) {
-      console.warn('[ai-chat] failed to fetch providers from backend:', err)
     }
+
+    providerContext = rawProviders.map(p => {
+      const svcList = p.services.slice(0, 3).map((s: any) =>
+        `    • ${s.title} — ${Number(s.price).toLocaleString()} ETB${s.price_type === 'hourly' ? '/hr' : ''} (${s.category})`
+      ).join('\n')
+      return `[Provider #${p.id}] ${p.name} | ${p.title} | ⭐${p.rating} | ${p.completed_jobs} jobs | City: ${p.city || 'Addis Ababa'}\n${svcList}`
+    }).join('\n\n')
 
     // Local Trained Fallback for Customers
     function generateCustomerSmartFallback() {
-      // Check FAQ first
       if (faqMatch) {
         return {
           reply: faqMatch.customerAnswer,
@@ -278,7 +288,6 @@ ${jobsContext || 'No open jobs available.'}
         }
       }
 
-      // If user is searching for a provider/service
       const matchedProviders = scoreAndFilterProviders(userMessage, rawProviders, body.userCity)
 
       if (matchedProviders.length > 0) {
@@ -297,7 +306,6 @@ ${jobsContext || 'No open jobs available.'}
         return { reply, providers: matchedProviders }
       }
 
-      // If user specifically asked for a trade but no provider matched
       if (isExplicitSearch) {
         return {
           reply: `I currently don't see verified providers specifically registered for "${userMessage}" in your immediate area.\n\n💡 **Recommended Action**: You can **[Post an Open Job](/jobs/post)** detailing your project and budget. Verified professionals will be notified and can submit custom offers directly to you!`,
@@ -305,11 +313,11 @@ ${jobsContext || 'No open jobs available.'}
         }
       }
 
-      // General intelligent assistant response
       return {
         reply: `👋 I can help you with anything on SkillLink:\n\n` +
           `• **Find Professionals**: Tell me what you need (e.g. *"Find a plumber"*, *"Looking for a graphic designer"*, *"Electrician in Addis"*).\n` +
-          `• **Custom Project**: [Post an Open Job](/jobs/post) to receive quotes.\n` +
+          `• **Market Rates**: Ask *"What are standard rates?"* or *"How much does cleaning cost in ETB?"*.\n` +
+          `• **Custom Project**: [Post an Open Job](/jobs/post) to receive competitive bids.\n` +
           `• **Payment & Escrow**: Ask *"How does payment work?"* or *"Is escrow safe?"*.\n` +
           `• **Categories**: Ask *"What services do you offer?"* to see all available categories.\n\n` +
           `How can I assist you right now?`,
@@ -317,13 +325,11 @@ ${jobsContext || 'No open jobs available.'}
       }
     }
 
-    // If no valid Gemini API key, return the local smart engine response
     if (!apiKey) {
       const result = generateCustomerSmartFallback()
       return { reply: result.reply, providers: result.providers, jobs: [] }
     }
 
-    // Try Google Gemini with official endpoints
     const modelsToTry = [
       'gemini-2.0-flash',
       'gemini-1.5-flash',
@@ -383,7 +389,6 @@ ${providerContext || 'No providers loaded.'}
       }
     }
 
-    // Fallback if Gemini fails
     const result = generateCustomerSmartFallback()
     return { reply: result.reply, providers: result.providers, jobs: [] }
   }
